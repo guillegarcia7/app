@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Rancho – Sistema de Gestión</title>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🔥</span>
+    El Rancho
+  </div>
+  <div class="header-time">
+    <div id="reloj" style="font-size:1rem;font-weight:600;color:var(--cream)"></div>
+    <div id="fecha" style="margin-top:2px"></div>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="showSection('mesas', this)">🪑 Mesas <span class="badge" id="badge-mesas">0</span></button>
+  <button class="nav-btn" onclick="showSection('menu', this)">📋 Menú</button>
+  <button class="nav-btn" onclick="showSection('pedidos', this)">🍖 Pedidos <span class="badge" id="badge-pedidos">0</span></button>
+  <button class="nav-btn" onclick="showSection('caja', this)">💵 Caja <span class="badge" id="badge-caja">0</span></button>
+  <button class="nav-btn" onclick="showSection('boletas', this)">🧾 Boletas</button>
+  <button class="nav-btn" onclick="showSection('inventario', this)">📦 Inventario <span class="badge" id="badge-inv">0</span></button>
+</nav>
+
+<main>
+
+  <!-- ====== MESAS ====== -->
+  <section id="sec-mesas" class="section active">
+    <div class="flex-between" style="margin-bottom:20px">
+      <div class="section-title" style="margin-bottom:0">🪑 Mapa de Mesas</div>
+      <div class="flex-gap">
+        <span class="estado-badge estado-listo">● Libre</span>
+        <span class="estado-badge estado-preparando">● Ocupada</span>
+        <span class="estado-badge estado-pendiente">● Reservada</span>
+        <button class="btn btn-primary btn-sm" onclick="openReservaModal()">+ Reserva</button>
+      </div>
+    </div>
+    <div class="mesa-grid" id="mesa-grid"></div>
+
+    <hr class="divider">
+    <div class="card-title">Reservas del día</div>
+    <div id="reservas-list" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+  </section>
+
+  <!-- ====== MENÚ ====== -->
+  <section id="sec-menu" class="section">
+    <div class="flex-between" style="margin-bottom:20px">
+      <div class="section-title" style="margin-bottom:0">📋 Carta del Restaurante</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddItemModal()">+ Agregar plato</button>
+    </div>
+    <div class="categoria-tabs" id="cat-tabs"></div>
+    <div class="menu-items-grid" id="menu-items-grid"></div>
+  </section>
+
+  <!-- ====== PEDIDOS ====== -->
+  <section id="sec-pedidos" class="section">
+    <div class="comanda-layout">
+      <div>
+        <div class="flex-between" style="margin-bottom:16px">
+          <div class="section-title" style="margin-bottom:0">🍖 Comandas Activas</div>
+          <button class="btn btn-primary btn-sm" onclick="openNuevoPedidoModal()">+ Nueva comanda</button>
+        </div>
+        <div id="pedidos-lista" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </div>
+
+      <!-- Carrito / nueva comanda -->
+      <div class="carrito" id="carrito-panel" style="display:none">
+        <div class="carrito-header">🛒 Nueva Comanda</div>
+        <div class="carrito-body">
+          <div style="margin-bottom:10px">
+            <label>Mesa</label>
+            <select id="carrito-mesa"></select>
+          </div>
+          <hr class="divider" style="margin:8px 0">
+          <div class="text-muted" style="font-size:0.75rem;margin-bottom:6px">Agregar items:</div>
+          <div id="carrito-menu-list" class="menu-selector"></div>
+          <hr class="divider" style="margin:8px 0">
+          <div class="text-muted" style="font-size:0.75rem;margin-bottom:6px">Pedido actual:</div>
+          <div id="carrito-items">
+            <div class="carrito-empty">Sin items aún</div>
+          </div>
+        </div>
+        <div class="carrito-footer">
+          <div class="carrito-total">
+            <span>Total</span>
+            <span id="carrito-total-val">$0</span>
+          </div>
+          <button class="btn btn-success btn-full" onclick="confirmarPedido()">✓ Confirmar pedido</button>
+          <button class="btn btn-ghost btn-full mt-sm btn-sm" onclick="cancelarCarrito()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== CAJA ====== -->
+  <section id="sec-caja" class="section">
+    <div class="section-title">💵 Caja del Día</div>
+
+    <div class="stats-row" id="stats-row"></div>
+
+    <div class="flex-between" style="margin-bottom:14px">
+      <div class="card-title" style="margin:0">Facturas emitidas</div>
+      <div class="flex-gap">
+        <input type="text" placeholder="Buscar..." style="width:180px" oninput="filtrarFacturas(this.value)">
+        <button class="btn btn-ghost btn-sm" onclick="exportarResumen()">↓ Exportar resumen</button>
+      </div>
+    </div>
+    <div class="factura-list" id="factura-list"></div>
+  </section>
+
+  <!-- ====== BOLETAS ====== -->
+  <section id="sec-boletas" class="section">
+    <div class="flex-between" style="margin-bottom:20px">
+      <div class="section-title" style="margin-bottom:0">🧾 Emisión de Boletas</div>
+      <div class="flex-gap">
+        <span class="tipo-badge tipo-A">A</span>
+        <span class="tipo-badge tipo-B">B</span>
+        <span class="tipo-badge tipo-X">X</span>
+        <span class="text-muted" style="font-size:0.8rem">Tipos de comprobante</span>
+      </div>
+    </div>
+    <div class="boleta-layout">
+      <!-- CONSTRUCTOR -->
+      <div class="boleta-builder">
+        <div class="boleta-builder-header">📝 Datos del comprobante</div>
+        <div class="boleta-builder-body">
+          <div class="boleta-row">
+            <div class="field">
+              <label>Tipo de comprobante</label>
+              <select id="bol-tipo" onchange="renderBoletaPreview()">
+                <option value="B">Boleta B – Consumidor Final</option>
+                <option value="A">Factura A – Responsable Inscripto</option>
+                <option value="X">Ticket X – No fiscal</option>
+              </select>
+            </div>
+            <div class="field-sm">
+              <label>Mesa</label>
+              <select id="bol-mesa" onchange="cargarItemsDeMesa()">
+                <option value="">—</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="boleta-row">
+            <div class="field">
+              <label>Nombre / Razón social</label>
+              <input type="text" id="bol-cliente" placeholder="Consumidor Final" oninput="renderBoletaPreview()">
+            </div>
+            <div class="field">
+              <label>RUT / CI (opcional)</label>
+              <input type="text" id="bol-rut" placeholder="—" oninput="renderBoletaPreview()">
+            </div>
+          </div>
+
+          <hr class="divider">
+          <div class="card-title">Items del comprobante</div>
+
+          <div id="boleta-items-list" style="margin-bottom:10px"></div>
+
+          <!-- Agregar item manual -->
+          <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="card-title" style="margin-bottom:8px">+ Agregar ítem</div>
+            <div class="boleta-row">
+              <div class="field">
+                <label>Descripción</label>
+                <input type="text" id="bi-desc" placeholder="Nombre del item">
+              </div>
+              <div class="field-sm">
+                <label>Cant.</label>
+                <input type="number" id="bi-qty" value="1" min="1">
+              </div>
+              <div class="field-sm">
+                <label>Precio unit.</label>
+                <input type="number" id="bi-precio" placeholder="0">
+              </div>
+              <div style="padding-bottom:2px">
+                <button class="btn btn-primary btn-sm" onclick="agregarItemBoleta()" style="margin-top:20px">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Descuentos y recargos -->
+          <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="card-title" style="margin-bottom:8px">Descuentos / Recargos</div>
+            <div class="boleta-row">
+              <div class="field">
+                <label>Descuento (%)</label>
+                <input type="number" id="bol-desc" placeholder="0" min="0" max="100" oninput="renderBoletaPreview()">
+              </div>
+              <div class="field">
+                <label>Recargo (%)</label>
+                <input type="number" id="bol-rec" placeholder="0" min="0" oninput="renderBoletaPreview()">
+              </div>
+              <div class="field">
+                <label>Método de pago</label>
+                <select id="bol-pago" onchange="renderBoletaPreview()">
+                  <option>Efectivo</option>
+                  <option>Tarjeta</option>
+                  <option>QR/Transferencia</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="boleta-totales" id="boleta-totales-calc"></div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn btn-success" style="flex:1" onclick="emitirBoleta()">✓ Emitir comprobante</button>
+            <button class="btn btn-ghost btn-sm" onclick="limpiarBoleta()">Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="boleta-preview">
+        <div class="bp-header">
+          <span>Vista previa</span>
+          <button class="btn btn-ghost btn-sm" onclick="imprimirBoleta()">🖨 Imprimir</button>
+        </div>
+        <div class="bp-body">
+          <div id="boleta-doc-preview"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="flex-between" style="margin-bottom:14px">
+      <div class="card-title" style="margin:0">Comprobantes emitidos hoy</div>
+      <input type="text" placeholder="Buscar..." style="width:200px" oninput="filtrarBoletas(this.value)">
+    </div>
+    <div id="boletas-historial" style="display:flex;flex-direction:column;gap:8px"></div>
+  </section>
+
+  <!-- ====== INVENTARIO ====== -->
+  <section id="sec-inventario" class="section">
+    <div class="flex-between" style="margin-bottom:20px">
+      <div class="section-title" style="margin-bottom:0">📦 Inventario</div>
+      <div class="flex-gap">
+        <button class="btn btn-ghost btn-sm" onclick="openMovModal('entrada')">📥 Entrada de stock</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddInvModal()">+ Nuevo producto</button>
+      </div>
+    </div>
+
+    <div class="inv-stats" id="inv-stats-row"></div>
+
+    <div class="inv-filter-tabs" id="inv-cat-tabs"></div>
+
+    <div class="inv-grid" id="inv-grid"></div>
+
+    <hr class="divider">
+    <div class="flex-between" style="margin-bottom:12px">
+      <div class="card-title" style="margin:0">Últimos movimientos</div>
+    </div>
+    <div id="inv-movimientos" style="max-height:320px;overflow-y:auto"></div>
+  </section>
+
+</main>
+
+<!-- MODAL BOLETA EMITIDA -->
+<div class="modal-overlay" id="modal-boleta-ok">
+  <div class="modal" style="max-width:440px">
+    <div id="boleta-ok-content"></div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-primary" onclick="imprimirBoleta()">🖨 Imprimir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-boleta-ok')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MOVIMIENTO INVENTARIO -->
+<div class="modal-overlay" id="modal-mov">
+  <div class="modal">
+    <h3 id="modal-mov-title">📥 Entrada de stock</h3>
+    <label>Producto</label>
+    <select id="mov-producto"></select>
+    <label>Cantidad</label>
+    <input type="number" id="mov-qty" value="1" min="1">
+    <label>Motivo / Nota</label>
+    <input type="text" id="mov-nota" placeholder="Ej: Compra semanal, Merma, etc.">
+    <div class="modal-actions">
+      <button class="btn btn-success" onclick="confirmarMovimiento()">Confirmar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-mov')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO PRODUCTO INVENTARIO -->
+<div class="modal-overlay" id="modal-add-inv">
+  <div class="modal">
+    <h3>➕ Nuevo producto en inventario</h3>
+    <label>Nombre</label>
+    <input type="text" id="inv-nombre" placeholder="Ej: Tira de asado (kg)">
+    <label>Categoría</label>
+    <select id="inv-cat-sel">
+      <option>Carnes</option>
+      <option>Embutidos</option>
+      <option>Bebidas</option>
+      <option>Verduras</option>
+      <option>Varios</option>
+    </select>
+    <label>Unidad</label>
+    <select id="inv-unidad">
+      <option value="kg">kg</option>
+      <option value="un">unidades</option>
+      <option value="lt">litros</option>
+      <option value="pkg">paquetes</option>
+    </select>
+    <label>Stock inicial</label>
+    <input type="number" id="inv-stock-ini" value="0" min="0">
+    <label>Stock mínimo (alerta)</label>
+    <input type="number" id="inv-stock-min" value="5" min="0">
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="agregarProductoInv()">Agregar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-inv')">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-mesa">
+  <div class="modal">
+    <h3 id="modal-mesa-title">Mesa</h3>
+    <div id="modal-mesa-info" style="font-size:0.875rem;color:var(--muted);margin-bottom:4px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-ocupar" onclick="cambiarEstadoMesa('ocupada')">🍽 Ocupar</button>
+      <button class="btn btn-ghost" id="btn-liberar" onclick="cambiarEstadoMesa('libre')">✓ Liberar</button>
+      <button class="btn btn-warning" id="btn-reservar" onclick="cambiarEstadoMesa('reservada')">📅 Reservar</button>
+      <button class="btn btn-danger btn-sm" onclick="closeMesaModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESERVA -->
+<div class="modal-overlay" id="modal-reserva">
+  <div class="modal">
+    <h3>📅 Nueva Reserva</h3>
+    <label>Nombre del cliente</label>
+    <input type="text" id="reserva-nombre" placeholder="Ej: Familia García">
+    <label>Mesa</label>
+    <select id="reserva-mesa"></select>
+    <label>Hora</label>
+    <input type="time" id="reserva-hora" value="20:00">
+    <label>Cantidad de personas</label>
+    <input type="number" id="reserva-personas" value="4" min="1" max="20">
+    <label>Notas</label>
+    <input type="text" id="reserva-notas" placeholder="Cumpleaños, alergia, etc.">
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="confirmarReserva()">Confirmar reserva</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-reserva')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR ITEM MENÚ -->
+<div class="modal-overlay" id="modal-add-item">
+  <div class="modal">
+    <h3>➕ Nuevo plato / bebida</h3>
+    <label>Nombre</label>
+    <input type="text" id="item-nombre" placeholder="Ej: Tira de asado">
+    <label>Descripción</label>
+    <input type="text" id="item-desc" placeholder="Breve descripción">
+    <label>Precio ($)</label>
+    <input type="number" id="item-precio" placeholder="0" min="0">
+    <label>Categoría</label>
+    <select id="item-cat">
+      <option>Parrilla</option>
+      <option>Entradas</option>
+      <option>Guarniciones</option>
+      <option>Bebidas</option>
+      <option>Postres</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="agregarItemMenu()">Agregar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-item')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TICKET -->
+<div class="modal-overlay" id="modal-ticket">
+  <div class="modal" style="max-width:400px">
+    <div id="ticket-content"></div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-ticket')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+
+  <script src="script.js"></script>
+</body>
+</html>
